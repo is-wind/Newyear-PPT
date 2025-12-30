@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { INITIAL_SLIDES } from './constants';
-import { SlideData } from './types';
-import Slide from './components/Slide';
+import { INITIAL_SLIDES } from './constants.ts';
+import { SlideData } from './types.ts';
+import Slide from './components/Slide.tsx';
 
 const App: React.FC = () => {
   const [slides, setSlides] = useState<SlideData[]>(INITIAL_SLIDES);
@@ -12,12 +12,12 @@ const App: React.FC = () => {
   const clickTimer = useRef<number | null>(null);
 
   const totalSlides = slides.length;
-  // Index management based on Slide IDs in constants.ts
-  // 插入一页后，主节目变成17页（索引0-16），Quiz Board变成第18页（索引17）
-  const QUIZ_BOARD_INDEX = 17; // Slide ID 18
-  const QUIZ_START_INDEX = 18; // Slide ID 19
-  const QUIZ_END_INDEX = 42;   // Slide ID 43 (25 quiz items)
-  const NEXT_AFTER_QUIZ = 43;  // Slide ID 44 (Stand BA)
+  
+  // 核心逻辑配置：索引必须与 constants.ts 中的 ID 保持一致
+  const QUIZ_BOARD_INDEX = 17; // 第18页（索引17）是知识问答面板
+  const QUIZ_START_INDEX = 18; // 19-43页是具体的题目
+  const QUIZ_END_INDEX = 42;
+  const NEXT_AFTER_QUIZ = 43;  // 44页是立BA互动
 
   const jumpToSlide = useCallback((index: number) => {
     if (index >= 0 && index < totalSlides) {
@@ -33,11 +33,15 @@ const App: React.FC = () => {
   }, [totalSlides]);
 
   const nextSlide = useCallback(() => {
+    // 如果在问答面板，按下一页直接跳过所有题目到后面的互动
     if (currentIndex === QUIZ_BOARD_INDEX) {
       jumpToSlide(NEXT_AFTER_QUIZ);
-    } else if (currentIndex >= QUIZ_START_INDEX && currentIndex <= QUIZ_END_INDEX) {
+    } 
+    // 如果正在看具体的题目，按下一页（或点击背景）应该回到问答面板，方便选下一题
+    else if (currentIndex >= QUIZ_START_INDEX && currentIndex <= QUIZ_END_INDEX) {
       jumpToSlide(QUIZ_BOARD_INDEX);
-    } else {
+    } 
+    else {
       setCurrentIndex((prev) => (prev < totalSlides - 1 ? prev + 1 : prev));
     }
   }, [currentIndex, jumpToSlide, NEXT_AFTER_QUIZ, totalSlides]);
@@ -52,6 +56,7 @@ const App: React.FC = () => {
 
   const handleContainerClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
+    // 如果点击的是控制面板、按钮或正在编辑文字，不触发翻页
     if (target.closest('.controls-panel') || target.closest('button')) return;
     if (document.activeElement?.getAttribute('contenteditable') === 'true') return;
 
@@ -69,7 +74,7 @@ const App: React.FC = () => {
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        console.error(`全屏失败: ${err.message}`);
       });
     } else {
       document.exitFullscreen();
@@ -133,9 +138,12 @@ const App: React.FC = () => {
   }, []);
 
   const handleUpdateSlide = (updatedSlide: SlideData) => {
-    const newSlides = [...slides];
-    newSlides[currentIndex] = updatedSlide;
-    setSlides(newSlides);
+    setSlides(prev => {
+        const newSlides = [...prev];
+        const idx = newSlides.findIndex(s => s.id === updatedSlide.id);
+        if (idx !== -1) newSlides[idx] = updatedSlide;
+        return newSlides;
+    });
   };
 
   return (
@@ -160,6 +168,7 @@ const App: React.FC = () => {
         <div className="flex gap-1 overflow-x-auto max-w-md scrollbar-hide px-2">
             {slides.map((slide, idx) => {
                 const isQuizQuestion = idx >= QUIZ_START_INDEX && idx <= QUIZ_END_INDEX;
+                // 底部进度条隐藏所有的具体题目，只显示主流程
                 if (isQuizQuestion) return null;
                 return (
                     <div 
@@ -193,8 +202,8 @@ const App: React.FC = () => {
 
       {!isFullscreen && (
         <div className="fixed bottom-4 left-4 text-white/30 text-xs flex flex-col gap-1">
-          <div>提示：单击背景翻页 | 方向键控制 | F 全屏</div>
-          <div className="font-bold text-yellow-500/80">双击文字区域进行编辑修改</div>
+          <div>提示：空格/方向键/点击背景翻页 | F 全屏 | B 返回问答面板</div>
+          <div className="font-bold text-yellow-500/80">双击文字区域进行即时修改</div>
         </div>
       )}
     </div>

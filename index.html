@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>元旦晚会屏幕提示器</title>
+    <title>2026 元旦晚会屏幕提示器</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -12,9 +12,16 @@
             padding: 0;
             overflow: hidden;
             background-color: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
         /* 硬件加速容器 */
         #root {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transform: translateZ(0);
             backface-visibility: hidden;
         }
@@ -24,23 +31,20 @@
             cursor: text;
         }
 
-        /* 名单滚动动画：前端保持平稳，后端（标题出现时）显著加速 */
+        /* 名单滚动动画 */
         @keyframes roll-to-center {
             0% { 
                 transform: translate3d(0, 768px, 0); 
             }
             85% {
-                /* 用 85% 的时间平稳地滚动完名单区，此时距离终点还有约 700px 的大间距 */
                 transform: translate3d(0, calc(var(--scroll-final-pos, -1500px) + 700px), 0);
             }
             100% { 
-                /* 仅用最后 15% 的时间快速完成剩下的 700px 路程，实现结尾加速感 */
                 transform: translate3d(0, var(--scroll-final-pos, -1500px), 0); 
             }
         }
 
         .animate-credits-roll {
-            /* 总时长 24s，分段节奏由 keyframes 控制 */
             animation: roll-to-center 24s linear forwards;
             will-change: transform;
         }
@@ -103,10 +107,12 @@
             text-shadow: 0 0 20px rgba(251, 191, 36, 0.3), 0 10px 40px rgba(0,0,0,0.6);
         }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/"
   }
@@ -115,5 +121,7 @@
 </head>
 <body>
     <div id="root"></div>
+    <!-- 关键修复：添加模块入口脚本 -->
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>

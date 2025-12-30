@@ -1,8 +1,8 @@
 
 import React, { useEffect, useRef, memo, useState } from 'react';
-import { SlideData } from '../types';
-import EditableText from './EditableText';
-import { categories } from '../constants';
+import { SlideData } from '../types.ts';
+import EditableText from './EditableText.tsx';
+import { categories } from '../constants.ts';
 
 interface SlideProps {
   data: SlideData;
@@ -35,32 +35,12 @@ const Slide: React.FC<SlideProps> = ({ data, allSlides, scale, onUpdate, onJump 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const finalTitleRef = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState(0); // 0: Question, 1: Image (if exists), 2: Answer
+  const [step, setStep] = useState(0); // 0: 题目, 1: 提示(若有), 2: 答案
 
   const isQuizSlide = data.id >= 19 && data.id <= 43;
 
   useEffect(() => {
     if (data.type === 'credits') {
-      if (audioRef.current) {
-        const audio = audioRef.current;
-        audio.volume = 1.0;
-        
-        const playAudio = async () => {
-          try {
-            await audio.play();
-          } catch (e) {
-            const runOnce = () => {
-              audio.play().catch(() => {});
-              window.removeEventListener('click', runOnce);
-              window.removeEventListener('keydown', runOnce);
-            };
-            window.addEventListener('click', runOnce);
-            window.addEventListener('keydown', runOnce);
-          }
-        };
-        playAudio();
-      }
-
       if (scrollContainerRef.current && finalTitleRef.current) {
         const container = scrollContainerRef.current;
         const finalTitle = finalTitleRef.current;
@@ -71,13 +51,6 @@ const Slide: React.FC<SlideProps> = ({ data, allSlides, scale, onUpdate, onJump 
         container.style.setProperty('--scroll-final-pos', `${finalPos}px`);
       }
     }
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-    };
   }, [data.type]);
 
   const updateTitle = (newTitle: string) => onUpdate({ ...data, title: newTitle });
@@ -129,8 +102,6 @@ const Slide: React.FC<SlideProps> = ({ data, allSlides, scale, onUpdate, onJump 
     if (data.type === 'credits') {
       return (
         <div className="flex flex-col h-full z-10 relative overflow-hidden">
-          <audio ref={audioRef} src="./bgm.mp3" preload="auto" loop />
-          
           <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-red-900 via-red-900/40 to-transparent z-20 pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-red-800 via-red-800/60 to-transparent z-20 pointer-events-none"></div>
 
@@ -227,7 +198,6 @@ const Slide: React.FC<SlideProps> = ({ data, allSlides, scale, onUpdate, onJump 
 
     return (
       <div className="flex flex-col h-full p-16 z-10 relative justify-center items-center">
-        {/* Centered Title Section */}
         <div className={`mb-12 text-center flex flex-col items-center w-full ${isQuizSlide ? 'mt-4' : ''}`}>
           <EditableText 
             text={data.title} 
@@ -238,7 +208,6 @@ const Slide: React.FC<SlideProps> = ({ data, allSlides, scale, onUpdate, onJump 
         </div>
         
         <div className="flex flex-col gap-10 items-center text-center w-full max-w-5xl">
-          {/* Question / Main Content */}
           <div className="animate-title-in w-full flex justify-center">
              <EditableText 
                 text={data.content?.[0] || ""} 
@@ -247,7 +216,6 @@ const Slide: React.FC<SlideProps> = ({ data, allSlides, scale, onUpdate, onJump 
              />
           </div>
 
-          {/* Image Step (Full view for the hint) */}
           {hasImage && isShowingImage && (
             <div className="animate-title-in overflow-hidden rounded-xl border-4 border-yellow-500/30 bg-black/40 shadow-inner w-full max-w-[700px] aspect-video flex items-center justify-center">
               <img 
@@ -258,7 +226,6 @@ const Slide: React.FC<SlideProps> = ({ data, allSlides, scale, onUpdate, onJump 
             </div>
           )}
 
-          {/* Answer Step */}
           {isShowingAnswer && (
             <div className={`pt-8 border-t-2 border-white/10 animate-title-in w-full flex flex-col items-center ${hasImage ? 'bg-red-900/80 p-6 rounded-lg' : ''}`}>
                <div className="text-yellow-500 font-black text-2xl mb-2 uppercase tracking-[0.3em] text-center opacity-80">Answer</div>
@@ -271,7 +238,6 @@ const Slide: React.FC<SlideProps> = ({ data, allSlides, scale, onUpdate, onJump 
           )}
         </div>
 
-        {/* Next Step Button for Quiz */}
         {isQuizSlide && ((hasImage && step < 2) || (!hasImage && step < 1)) && (
           <button 
             onClick={nextStep}
